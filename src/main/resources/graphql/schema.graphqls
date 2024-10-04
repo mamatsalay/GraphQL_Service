@@ -1,10 +1,7 @@
 type UserInfo {
     id: ID!
     username: String!
-    password: String!
     email: String!
-    incomes: [Income]
-    expenses: [Expense]
 }
 
 type Income {
@@ -36,20 +33,20 @@ type CustomLabel {
 # Queries and Mutations
 
 type Query {
-    getUserInfo(id: ID!): UserInfo
+    getUserInfo: UserInfo
     getAllIncomes(StartDate: String!, EndDate: String!, customLabelNames: [String!]): [Income]
     getAllExpenses(StartDate: String!, EndDate: String!, customLabelNames: [String!]): [Expense]
     getAllCustomLabels: [CustomLabel]
 }
 
 type Mutation {
-    addIncome(amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Income
-    addExpense(amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Expense
-    deleteIncome(id: ID!): String
-    deleteExpense(id: ID!): String
-    updateIncome(id: ID!, amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Income
-    updateExpense(id: ID!, amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Expense
-    createCustomLabel(name: String!, color: String!): CustomLabel
+    addIncome(email: String!, amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Income
+    addExpense(email: String!, amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Expense
+    deleteIncome(email: String!, id: ID!): String
+    deleteExpense(email: String!, id: ID!): String
+    updateIncome(email: String!, id: ID!, amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Income
+    updateExpense(email: String!, id: ID!, amount: Float!, description: String!, date: String!, customLabelNames: [String!]): Expense
+    createCustomLabel(email: String!, name: String!, color: String!): CustomLabel
     updateCustomLabel(id: ID!, name: String!, color: String!): CustomLabel
     deleteCustomLabel(id: ID!): String
 }

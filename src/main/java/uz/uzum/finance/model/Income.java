@@ -41,7 +41,7 @@ public class Income {
     private Set<CustomLabel> customLabels = new LinkedHashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_info_id")
+    @JoinColumn(name = "user_info_email")
     private UserInfo userInfo;
 
     @Override

@@ -21,6 +21,7 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final CustomLabelRepository customLabelRepository;
 
+
     private Set<CustomLabel> fetchCustomLabelsByNames(List<String> customLabelNames) {
         return customLabelNames.stream()
                 .map(customLabelRepository::findByName)
@@ -30,8 +31,7 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public List<Expense> getAllExpenses(LocalDate startDate, LocalDate endDate, List<String> customLabelNames) {
         if (customLabelNames != null && !customLabelNames.isEmpty()) {
-            Long labelCount = (long) customLabelNames.size();
-            return expenseRepository.findByDateBetweenAndExactLabels(startDate, endDate, customLabelNames, labelCount);
+            return expenseRepository.findByDateBetweenAndExactLabels(startDate, endDate, customLabelNames);
         } else {
             return expenseRepository.findByDateBetween(startDate, endDate);
         }

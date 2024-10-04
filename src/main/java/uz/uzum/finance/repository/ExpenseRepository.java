@@ -10,16 +10,10 @@ import java.util.List;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    @Query("SELECT e FROM Expense e " +
-            "WHERE e.date BETWEEN :startDate AND :endDate " +
-            "AND SIZE(e.customLabels) = :labelCount " +
-            "AND NOT EXISTS (" +
-            "  SELECT cl FROM e.customLabels cl WHERE cl.name NOT IN :customLabelNames" +
-            ")")
+    @Query("SELECT e FROM Expense e JOIN e.customLabels cl WHERE e.date BETWEEN :startDate AND :endDate AND :customLabelNames IS NULL OR cl.name IN :customLabelNames")
     List<Expense> findByDateBetweenAndExactLabels(@Param("startDate") LocalDate startDate,
                                              @Param("endDate") LocalDate endDate,
-                                             @Param("customLabelNames") List<String> customLabelNames,
-                                             @Param("labelCount") Long labelCount);
+                                             @Param("customLabelNames") List<String> customLabelNames);
 
     List<Expense> findByDateBetween(LocalDate startDate, LocalDate endDate);
 

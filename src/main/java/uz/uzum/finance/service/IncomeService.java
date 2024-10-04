@@ -27,8 +27,7 @@ public class IncomeService {
     @Transactional(readOnly = true)
     public List<Income> getAllIncomes(LocalDate startDate, LocalDate endDate, List<String> customLabelNames) {
         if (customLabelNames != null && !customLabelNames.isEmpty()) {
-            Long labelCount = (long) customLabelNames.size();
-            return incomeRepository.findByDateBetweenAndExactLabels(startDate, endDate, customLabelNames, labelCount);
+            return incomeRepository.findByDateBetweenAndExactLabels(startDate, endDate, customLabelNames);
         } else {
             return incomeRepository.findByDateBetween(startDate, endDate);
         }
