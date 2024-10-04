@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.uzum.finance.model.CustomLabel;
 import uz.uzum.finance.model.Expense;
+import uz.uzum.finance.model.UserInfo;
 import uz.uzum.finance.repository.CustomLabelRepository;
 import uz.uzum.finance.repository.ExpenseRepository;
+import uz.uzum.finance.repository.UserInfoRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,6 +22,7 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final CustomLabelRepository customLabelRepository;
+    private final UserInfoRepository userInfoRepository;
 
 
     private Set<CustomLabel> fetchCustomLabelsByNames(List<String> customLabelNames) {
@@ -29,17 +32,24 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly = true)
-    public List<Expense> getAllExpenses(LocalDate startDate, LocalDate endDate, List<String> customLabelNames) {
+    public List<Expense> getAllExpenses(String email, LocalDate startDate, LocalDate endDate, List<String> customLabelNames) {
+
+        UserInfo userInfo = userInfoRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         if (customLabelNames != null && !customLabelNames.isEmpty()) {
-            return expenseRepository.findByDateBetweenAndExactLabels(startDate, endDate, customLabelNames);
+            return expenseRepository.findByUserEmailAndDateBetweenAndLabels(startDate, endDate, customLabelNames, email);
         } else {
-            return expenseRepository.findByDateBetween(startDate, endDate);
+            return expenseRepository.findByUserInfo_EmailAndDateBetween(email, startDate, endDate);
         }
     }
 
     @Transactional
-    public Expense addExpense(BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+    public Expense addExpense(String email ,BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+
+        UserInfo userInfo = userInfoRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         Expense expense = new Expense();
+        expense.setUserInfo(userInfo);
         expense.setAmount(amount);
         expense.setDescription(description);
         expense.setDate(date);
@@ -48,25 +58,30 @@ public class ExpenseService {
     }
 
     @Transactional
-    public String deleteExpense(Long id) {
+    public String deleteExpense(String email, Long id) {
         Expense expense = expenseRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Expense not found"));
+        if (!expense.getUserInfo().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized to delete this expense");
+        }
         expenseRepository.delete(expense);
         return "Expense with id " + id + " was deleted";
     }
 
     @Transactional
-    public Expense updateExpense(Long id, BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+    public Expense updateExpense(String email, Long id, BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Expense with ID " + id + " not found"));
+
+        if (!expense.getUserInfo().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized to update this expense");
+        }
 
         // Update basic fields
         expense.setAmount(amount);
         expense.setDescription(description);
         expense.setDate(date);
-
-        // Fetch and update labels
-        Set<CustomLabel> customLabels = fetchCustomLabelsByNames(customLabelNames);
-        expense.setCustomLabels(customLabels);
+        expense.setCustomLabels(fetchCustomLabelsByNames(customLabelNames));
 
         return expenseRepository.save(expense);
     }

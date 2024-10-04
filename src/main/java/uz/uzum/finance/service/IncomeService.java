@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.uzum.finance.model.CustomLabel;
 import uz.uzum.finance.model.Income;
+import uz.uzum.finance.model.UserInfo;
 import uz.uzum.finance.repository.CustomLabelRepository;
 import uz.uzum.finance.repository.IncomeRepository;
+import uz.uzum.finance.repository.UserInfoRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,46 +25,57 @@ public class IncomeService {
 
     private final IncomeRepository incomeRepository;
     private final CustomLabelRepository customLabelRepository;
+    private final UserInfoRepository userInfoRepository;
 
     @Transactional(readOnly = true)
-    public List<Income> getAllIncomes(LocalDate startDate, LocalDate endDate, List<String> customLabelNames) {
+    public List<Income> getAllIncomes(String email, LocalDate startDate, LocalDate endDate, List<String> customLabelNames) {
+
+        UserInfo userInfo = userInfoRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         if (customLabelNames != null && !customLabelNames.isEmpty()) {
-            return incomeRepository.findByDateBetweenAndExactLabels(startDate, endDate, customLabelNames);
+            return incomeRepository.findByUserEmailAndDateBetweenAndLabels(startDate, endDate, customLabelNames, email);
         } else {
-            return incomeRepository.findByDateBetween(startDate, endDate);
+            return incomeRepository.findByUserInfo_EmailAndDateBetween(email, startDate, endDate);
         }
     }
 
     @Transactional
-    public Income addIncome(BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+    public Income addIncome(String email, BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+
+        UserInfo user = userInfoRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         Income income = new Income();
         income.setAmount(amount);
         income.setDescription(description);
         income.setDate(date);
+        income.setUserInfo(user);
         income.setCustomLabels(fetchCustomLabelsByNames(customLabelNames));
         return incomeRepository.save(income);
     }
 
     @Transactional
-    public String deleteIncome(Long id) {
+    public String deleteIncome(String email, Long id) {
         Income income = incomeRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Income with ID " + id + " not found"));
+        if (!income.getUserInfo().getEmail().equals(email)) {
+            throw new IllegalArgumentException("Unauthorized to delete this expense");
+        }
         incomeRepository.delete(income);
         return "Income with ID " + id + " deleted";
     }
 
     @Transactional
-    public Income updateIncome(Long id, BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
+    public Income updateIncome(String email, Long id, BigDecimal amount, String description, LocalDate date, List<String> customLabelNames) {
         Income income = incomeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Income with ID " + id + " not found"));
+        if (!income.getUserInfo().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized to update this expense");
+        }
 
         // Update basic fields
         income.setAmount(amount);
         income.setDescription(description);
         income.setDate(date);
-
-        // Fetch and update labels
-        Set<CustomLabel> customLabels = fetchCustomLabelsByNames(customLabelNames);
-        income.setCustomLabels(customLabels);
+        income.setCustomLabels(fetchCustomLabelsByNames(customLabelNames));
 
         return incomeRepository.save(income);
     }

@@ -33,6 +33,9 @@ public class CustomLabel {
     @ManyToMany(mappedBy = "customLabels")
     private Set<Expense> expenses;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_info_email", nullable = false)
+    private UserInfo userInfo;
 
     @Override
     public final boolean equals(Object o) {

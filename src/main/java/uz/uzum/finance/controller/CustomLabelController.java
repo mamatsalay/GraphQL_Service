@@ -27,14 +27,10 @@ public class CustomLabelController {
         if (attributes != null) {
             HttpServletRequest request = attributes.getRequest();
             String email = request.getHeader("X-User-Email");
-            System.out.println("Received email: " + email);
-            // Your business logic here
+            return customLabelService.createCustomLabel(email, name, color);
         } else {
-            System.out.println("ServletRequestAttributes is null");
-            // Handle the case where attributes are null
+            throw new IllegalArgumentException("User not found");
         }
-
-        return customLabelService.createCustomLabel(name, color);
 
     }
 
@@ -42,17 +38,40 @@ public class CustomLabelController {
     public CustomLabel updateCustomLabel(@Argument Long id,
                                          @Argument String name,
                                          @Argument String color) {
-        return customLabelService.updateCustomLabel(id, name, color);
+
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            HttpServletRequest request = attributes.getRequest();
+            String email = request.getHeader("X-User-Email");
+            return customLabelService.updateCustomLabel(email, id, name, color);
+        } else {
+            throw new IllegalArgumentException("Do not have authorization");
+        }
     }
 
     @MutationMapping
-    public Void deleteCustomLabel(@Argument Long id) {
-        return customLabelService.deleteCustomLabel(id);
+    public String deleteCustomLabel(@Argument Long id) {
+
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            HttpServletRequest request = attributes.getRequest();
+            String email = request.getHeader("X-User-Email");
+            return customLabelService.deleteCustomLabel(email, id);
+        } else {
+            throw new IllegalArgumentException("Do not have authorization");
+        }
     }
 
     @QueryMapping
     public List<CustomLabel> getAllCustomLabels() {
-        return customLabelService.getAllCustomLabels();
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            HttpServletRequest request = attributes.getRequest();
+            String email = request.getHeader("X-User-Email");
+            return customLabelService.getAllCustomLabels(email);
+        } else {
+            throw new IllegalArgumentException("Do not have authorization");
+        }
     }
 
 }
